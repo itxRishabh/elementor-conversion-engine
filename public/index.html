@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elementor Engine — HTML to Elementor JSON Template Converter</title>
+    <meta name="description" content="Convert your static HTML pages, Tailwind utility classes, and custom CSS into 100% production-ready Elementor Pro JSON templates with specificity cascading.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Style -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Background glows -->
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+
+    <div class="container">
+        <!-- Main Panel -->
+        <main class="app-card" id="main-panel">
+            <header class="app-header">
+                <div class="logo-area">
+                    <span class="logo-icon">⚡</span>
+                    <h1 class="logo-title">Elementor Engine</h1>
+                </div>
+                <p class="logo-subtitle">Convert HTML, Tailwind, and Bootstrap structures into premium, fully editable Elementor Pro templates.</p>
+            </header>
+
+            <form id="compile-form" class="compile-form">
+                <!-- Input Type Switcher -->
+                <div class="toggle-container">
+                    <button type="button" id="btn-mode-file" class="toggle-btn active">File Upload</button>
+                    <button type="button" id="btn-mode-text" class="toggle-btn">Raw HTML Code</button>
+                </div>
+
+                <!-- File Upload Area -->
+                <div class="input-group" id="file-upload-group">
+                    <div class="drag-zone" id="drag-zone">
+                        <input type="file" id="html-file-input" accept=".html" class="hidden-file-input">
+                        <span class="drag-icon">📄</span>
+                        <p class="drag-text">Drag & drop your HTML file here, or <span class="browse-link">browse</span></p>
+                        <p class="drag-subtext" id="selected-filename">Supported format: .html</p>
+                    </div>
+                </div>
+
+                <!-- Raw HTML Text Area -->
+                <div class="input-group hidden" id="raw-text-group">
+                    <label for="html-text-input" class="field-label">Raw HTML Code</label>
+                    <textarea id="html-text-input" class="code-textarea" placeholder="<!-- Paste your HTML document here -->"></textarea>
+                </div>
+
+                <!-- Advanced Options Accordion -->
+                <div class="accordion">
+                    <button type="button" class="accordion-trigger" id="adv-options-trigger">
+                        <span>⚙️ Advanced Options (Base URL & Asset Sync)</span>
+                        <span class="accordion-arrow">▼</span>
+                    </button>
+                    <div class="accordion-content" id="adv-options-content">
+                        <div class="form-grid">
+                            <div class="form-field full-width">
+                                <label for="base-asset-url" class="field-label">Base Asset URL (Optional)</label>
+                                <input type="url" id="base-asset-url" placeholder="e.g. https://mywebsite.com/wp-content/uploads/assets/">
+                                <span class="field-help">Prepends this path to all relative image and video assets.</span>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="wp-url" class="field-label">WordPress Site URL</label>
+                                <input type="url" id="wp-url" placeholder="e.g. https://mywebsite.com">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="wp-user" class="field-label">WP Username</label>
+                                <input type="text" id="wp-user" placeholder="e.g. admin">
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label for="wp-pass" class="field-label">WP Application Password</label>
+                                <input type="password" id="wp-pass" placeholder="e.g. abcd 1234 efgh 5678">
+                                <span class="field-help">Required to upload local assets automatically to your WordPress media library.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="btn-submit" class="submit-btn">
+                    <span id="submit-text">Compile HTML Template</span>
+                    <div class="loader hidden" id="submit-loader"></div>
+                </button>
+            </form>
+        </main>
+
+        <!-- Result Panel -->
+        <section class="app-card result-card hidden" id="result-panel">
+            <header class="result-header">
+                <div class="result-header-left">
+                    <span class="success-badge">✓ Compiled</span>
+                    <h2 class="result-title">Template Ready</h2>
+                </div>
+                <div class="result-actions">
+                    <button type="button" id="btn-copy" class="btn-action">Copy JSON</button>
+                    <button type="button" id="btn-download" class="btn-action primary">Download Template</button>
+                </div>
+            </header>
+
+            <div class="result-body">
+                <div class="result-stats">
+                    <span class="stat-badge" id="stat-containers">0 Containers</span>
+                    <span class="stat-badge" id="stat-widgets">0 Widgets</span>
+                </div>
+                <div class="code-window">
+                    <div class="code-window-bar">
+                        <div class="dot dot-red"></div>
+                        <div class="dot dot-yellow"></div>
+                        <div class="dot dot-green"></div>
+                        <span class="code-filename">elementor-template.json</span>
+                    </div>
+                    <pre class="code-pre"><code id="code-output" class="language-json"></code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 Elementor Conversion Engine. Created by Rishabh Dev.</p>
+        </footer>
+    </div>
+
+    <!-- Script -->
+    <script src="index.js"></script>
+</body>
+</html>
