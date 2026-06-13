@@ -64,6 +64,5 @@ async def compile_endpoint(
         raise HTTPException(status_code=500, detail=f"Compilation error: {str(e)}")
 
 # Mount static files to serve the frontend UI only if the directory exists (for local uvicorn runs)
-public_path = os.path.join(parent_dir, "public")
-if os.path.exists(public_path):
-    app.mount("/", StaticFiles(directory=public_path, html=True), name="static")
+if os.path.exists(parent_dir):
+    app.mount("/", StaticFiles(directory=parent_dir, html=True), name="static")
