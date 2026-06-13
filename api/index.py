@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import sys
 import os
 
-# Add the root project directory to the path so we can import compiler modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Robust path injection for Vercel Lambda and local development
+api_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(api_dir)
+for path in [parent_dir, "/var/task"]:
+    if path not in sys.path:
+        sys.path.append(path)
 
 from compiler import compile_html, resolve_relative_urls, process_json_assets
 
@@ -59,5 +63,7 @@ async def compile_endpoint(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Compilation error: {str(e)}")
 
-# Mount static files to serve the frontend UI
-app.mount("/", StaticFiles(directory="public", html=True), name="static")
+# Mount static files to serve the frontend UI only if the directory exists (for local uvicorn runs)
+public_path = os.path.join(parent_dir, "public")
+if os.path.exists(public_path):
+    app.mount("/", StaticFiles(directory=public_path, html=True), name="static")
