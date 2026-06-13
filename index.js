@@ -1,54 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Mode Switcher Elements
-    const btnModeFile = document.getElementById('btn-mode-file');
-    const btnModeText = document.getElementById('btn-mode-text');
-    const fileUploadGroup = document.getElementById('file-upload-group');
-    const rawTextGroup = document.getElementById('raw-text-group');
-
-    // File input elements
+    // File inputs & Drag Zone Elements
     const dragZone = document.getElementById('drag-zone');
     const fileInput = document.getElementById('html-file-input');
+    const fileIndicator = document.getElementById('file-indicator');
     const selectedFilename = document.getElementById('selected-filename');
+    const btnClearFile = document.getElementById('btn-clear-file');
+    const rawTextInput = document.getElementById('html-text-input');
 
-    // Advanced settings Accordion elements
-    const advTrigger = document.getElementById('adv-options-trigger');
-    const accordion = advTrigger.parentElement;
+    // Advanced settings Accordion
+    const advOptionsTrigger = document.getElementById('adv-options-trigger');
+    const advConfigCard = document.getElementById('adv-config-card');
 
-    // Form submission elements
+    // Action button & Loader
     const compileForm = document.getElementById('compile-form');
     const btnSubmit = document.getElementById('btn-submit');
     const submitText = document.getElementById('submit-text');
     const submitLoader = document.getElementById('submit-loader');
 
-    // Results elements
-    const resultPanel = document.getElementById('result-panel');
+    // Output panel Elements
+    const emptyState = document.getElementById('empty-state');
+    const outputWindow = document.getElementById('output-window');
     const codeOutput = document.getElementById('code-output');
+    const outputStats = document.getElementById('output-stats');
+    const outputActions = document.getElementById('output-actions');
     const statContainers = document.getElementById('stat-containers');
     const statWidgets = document.getElementById('stat-widgets');
+    
+    // Output action buttons
     const btnCopy = document.getElementById('btn-copy');
     const btnDownload = document.getElementById('btn-download');
 
-    let currentMode = 'file'; // 'file' or 'text'
     let compiledResultData = null;
 
-    // 1. Toggle between modes
-    btnModeFile.addEventListener('click', () => {
-        currentMode = 'file';
-        btnModeFile.classList.add('active');
-        btnModeText.classList.remove('active');
-        fileUploadGroup.classList.remove('hidden');
-        rawTextGroup.classList.add('hidden');
-    });
-
-    btnModeText.addEventListener('click', () => {
-        currentMode = 'text';
-        btnModeText.classList.add('active');
-        btnModeFile.classList.remove('active');
-        rawTextGroup.classList.remove('hidden');
-        fileUploadGroup.classList.add('hidden');
-    });
-
-    // 2. Drag and drop file upload
+    // 1. Drag & Drop File Upload handling
     dragZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dragZone.classList.add('dragover');
@@ -63,51 +47,62 @@ document.addEventListener('DOMContentLoaded', () => {
         dragZone.classList.remove('dragover');
         if (e.dataTransfer.files.length > 0) {
             fileInput.files = e.dataTransfer.files;
-            updateSelectedFilename();
+            handleFileSelection();
         }
     });
 
     fileInput.addEventListener('change', () => {
-        updateSelectedFilename();
+        handleFileSelection();
     });
 
-    function updateSelectedFilename() {
+    btnClearFile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.value = '';
+        handleFileSelection();
+    });
+
+    function handleFileSelection() {
         if (fileInput.files.length > 0) {
-            selectedFilename.textContent = `Selected: ${fileInput.files[0].name}`;
-            selectedFilename.style.color = '#ffffff';
+            selectedFilename.textContent = fileInput.files[0].name;
+            fileIndicator.classList.remove('hidden');
+            dragZone.classList.add('hidden');
+            rawTextInput.disabled = true; // disable text input since file is selected
+            rawTextInput.placeholder = "File selected above. Clear file to write HTML manually.";
         } else {
-            selectedFilename.textContent = 'Supported format: .html';
-            selectedFilename.style.color = 'var(--text-muted)';
+            selectedFilename.textContent = '';
+            fileIndicator.classList.add('hidden');
+            dragZone.classList.remove('hidden');
+            rawTextInput.disabled = false;
+            rawTextInput.placeholder = "<!-- Paste your raw HTML here... -->";
         }
     }
 
-    // 3. Advanced Settings Accordion trigger
-    advTrigger.addEventListener('click', () => {
-        accordion.classList.toggle('open');
+    // 2. Advanced settings collapsible triggers
+    advOptionsTrigger.addEventListener('click', () => {
+        advConfigCard.classList.toggle('open');
     });
 
-    // 4. Form Submit & Compilation
+    // 3. Compile Form Submission
     compileForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Validate
-        if (currentMode === 'file' && fileInput.files.length === 0) {
-            alert('Please select or drag an HTML file first.');
-            return;
-        }
-        if (currentMode === 'text' && !document.getElementById('html-text-input').value.trim()) {
-            alert('Please paste some HTML code first.');
+        const hasFile = fileInput.files.length > 0;
+        const htmlCode = rawTextInput.value.trim();
+
+        if (!hasFile && !htmlCode) {
+            alert('Please upload an HTML file or paste raw HTML code to compile.');
             return;
         }
 
-        // Prepare parameters
+        // Prepare request payload
         const formData = new FormData();
-        if (currentMode === 'file') {
+        if (hasFile) {
             formData.append('html_file', fileInput.files[0]);
         } else {
-            formData.append('html_text', document.getElementById('html-text-input').value);
+            formData.append('html_text', htmlCode);
         }
 
+        // Advanced Option values
         const baseAssetUrlVal = document.getElementById('base-asset-url').value.trim();
         const wpUrlVal = document.getElementById('wp-url').value.trim();
         const wpUserVal = document.getElementById('wp-user').value.trim();
@@ -118,11 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wpUserVal) formData.append('wp_user', wpUserVal);
         if (wpPassVal) formData.append('wp_pass', wpPassVal);
 
-        // Show Loader
+        // UI Loading States
         btnSubmit.disabled = true;
-        submitText.textContent = 'Compiling template...';
+        submitText.textContent = 'Compiling...';
         submitLoader.classList.remove('hidden');
-        resultPanel.classList.add('hidden');
 
         try {
             const response = await fetch('/api/compile', {
@@ -138,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             compiledResultData = data;
 
-            // Render stats
+            // Compute statistics
             let containersCount = 0;
             let widgetsCount = 0;
             function countElements(elements) {
@@ -153,54 +147,60 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.content) {
                 countElements(data.content);
             }
-            statContainers.textContent = `${containersCount} Containers`;
-            statWidgets.textContent = `${widgetsCount} Widgets`;
 
-            // Display code output
+            // Render stats
+            statContainers.textContent = `${containersCount} Container${containersCount !== 1 ? 's' : ''}`;
+            statWidgets.textContent = `${widgetsCount} Widget${widgetsCount !== 1 ? 's' : ''}`;
+
+            // Set JSON output code
             codeOutput.textContent = JSON.stringify(data, null, 4);
 
-            // Display Results
-            resultPanel.classList.remove('hidden');
-            resultPanel.scrollIntoView({ behavior: 'smooth' });
+            // Toggle panels display
+            emptyState.classList.add('hidden');
+            outputWindow.classList.remove('hidden');
+            outputStats.classList.remove('hidden');
+            outputActions.classList.remove('hidden');
 
         } catch (err) {
             console.error(err);
             alert(`Error: ${err.message}`);
         } finally {
-            // Restore Button
+            // Restore button trigger states
             btnSubmit.disabled = false;
-            submitText.textContent = 'Compile HTML Template';
+            submitText.textContent = 'Compile Layout';
             submitLoader.classList.add('hidden');
         }
     });
 
-    // 5. Copy JSON Action
+    // 4. Copy Output Action
     btnCopy.addEventListener('click', () => {
         if (!compiledResultData) return;
         navigator.clipboard.writeText(JSON.stringify(compiledResultData, null, 4))
             .then(() => {
-                const originalText = btnCopy.textContent;
-                btnCopy.textContent = '✓ Copied!';
+                const prevText = btnCopy.textContent;
+                btnCopy.textContent = 'Copied';
+                btnCopy.style.borderColor = 'var(--success)';
                 btnCopy.style.color = 'var(--success)';
                 setTimeout(() => {
-                    btnCopy.textContent = originalText;
-                    btnCopy.style.color = '#ffffff';
+                    btnCopy.textContent = prevText;
+                    btnCopy.style.borderColor = 'var(--border)';
+                    btnCopy.style.color = 'var(--text)';
                 }, 2000);
             })
             .catch(err => {
-                console.error('Failed to copy text: ', err);
+                console.error('Clipboard copy failed: ', err);
             });
     });
 
-    // 6. Download JSON Template Action
+    // 5. Download Template Action
     btnDownload.addEventListener('click', () => {
         if (!compiledResultData) return;
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(compiledResultData, null, 4));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", "elementor-template.json");
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+        const downloadLink = document.createElement('a');
+        downloadLink.setAttribute("href", dataStr);
+        downloadLink.setAttribute("download", "elementor-template.json");
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        downloadLink.remove();
     });
 });
